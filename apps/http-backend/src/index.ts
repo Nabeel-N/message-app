@@ -3,7 +3,7 @@ import express, { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import cors from "cors";
 import { JWT_SECRET } from "./config";
-import { prisma } from "@repo/db/client"; // Correct import from the db package
+import { prisma } from "@repo/db/client";
 import * as bcrypt from "bcrypt";
 
 const app = express();
@@ -20,11 +20,11 @@ app.post("/api/signup", async (req, res) => {
       });
     }
 
-    const existingUser = await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { email: email },
     });
 
-    if (existingUser) {
+    if (user) {
       return res.status(409).json({
         message: "User with this email already exists",
       });
@@ -32,7 +32,7 @@ app.post("/api/signup", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await prisma.user.create({
+    const usercreation = await prisma.user.create({
       data: {
         name: name,
         email: email,
@@ -40,7 +40,7 @@ app.post("/api/signup", async (req, res) => {
       },
     });
 
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
+    const token = jwt.sign({ userId: usercreation.id }, JWT_SECRET, {
       expiresIn: "1d",
     });
 
@@ -53,6 +53,39 @@ app.post("/api/signup", async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
+app.post("/api/signin", async (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  if (!email || !password) {
+    return res.status(400).json({
+      message: " email, and password are required",
+    });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: email },
+  });
+  if (!user) {
+    return res.status(401).json({ message: "Invalid credentials" });
+  }
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid) {
+    return res.status(401).json({ message: "Invalid credentials" });
+  }
+  const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
+    expiresIn: "1d",
+  });
+
+  res.status(200).json({
+    message: "Logged in successfully",
+    token: token,
+  });
+});
+
+
+
 
 const PORT = process.env.PORT || 5001;
 
