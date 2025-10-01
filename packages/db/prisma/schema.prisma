@@ -19,4 +19,25 @@ model User {
   email   String   @unique
   name    String
   password String
+  room Room[]
+  chat Chat[]
 }
+
+model Room {
+  id Int    @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  adminId   Int
+  admin     User @relation(fields: [adminId], references: [id])
+  chat Chat[]
+}
+
+model Chat {
+  id Int @id @default(autoincrement())
+  roomId Int
+  message String
+  userId Int
+  createdAt DateTime @default(now())
+  room Room @relation(fields: [roomId] , references: [id])
+  user User @relation(fields: [userId] , references: [id])
+}
+

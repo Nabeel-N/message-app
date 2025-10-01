@@ -3,6 +3,7 @@ import { IncomingMessage } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import * as jwt from "jsonwebtoken";
 import { JWT_SECRET } from "./config";
+import { userInfo } from "os";
 
 const wss = new WebSocketServer({ port: 8080 });
 
@@ -14,7 +15,8 @@ interface UserInfo {
   isAlive: boolean;
 }
 
-const client = new Map<WebSocket, UserInfo>();
+const clients = new Map<WebSocket, UserInfo>();
+
 function checktoken(token: string) {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
@@ -28,9 +30,9 @@ function checktoken(token: string) {
   }
 }
 
-// This event fires when a new client connects
+// This event fires when a new clients connects
 wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
-  console.log("A new client connected!");
+  console.log("A new clients connected!");
   const url = request.url;
   if (!url) {
     return;
@@ -44,29 +46,45 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
     return;
   }
 
-  client.set(ws, {
+  clients.set(ws, {
     userId: userid,
     rooms: [],
     isAlive: true,
   });
 
-  // Send a welcome message to the newly connected client
+  ws.on("pong", (ws: WebSocket) => {
+    const userinfo = clients.get(ws);
+    if (!userinfo) {
+      return;
+    } else {
+      userinfo.isAlive == true;
+    }
+  });
+
+  // Send a welcome message to the newly connected clients
   ws.send("Welcome to the WebSocket server!");
 
-  // This event fires when the server receives a message from this specific client
+  // This event fires when the server receives a message from this specific clients
   ws.on("message", (message: string) => {
-    console.log(`Received message from client: ${message}`);
+    console.log(`Received message from clients: ${message}`);
+    const parseddata = JSON.parse(message.toString());
+    const userinfo = clients.get(ws);
+    if (!userinfo) {
+      return;
+    }
 
-    // Echo the message back to the client
+    
+
+    // Echo the message back to the clients
     ws.send(`You said: ${message}`);
   });
 
-  // This event fires when the client disconnects
+  // This event fires when the clients disconnects
   ws.on("close", () => {
     console.log("Client has disconnected.");
   });
 
-  // This event fires if there's an error with the client's connection
+  // This event fires if there's an error with the clients's connection
   ws.on("error", (error) => {
     console.error("WebSocket error:", error);
   });
