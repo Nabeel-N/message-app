@@ -9,7 +9,6 @@ import * as bcrypt from "bcrypt";
 const app = express();
 app.use(express.json());
 app.use(cors());
-
 app.post("/api/signup", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -83,7 +82,6 @@ app.post("/api/signin", async (req, res) => {
     token: token,
   });
 });
-
 
 
 

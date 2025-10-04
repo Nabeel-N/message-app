@@ -3,6 +3,8 @@ import { IncomingMessage } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import * as jwt from "jsonwebtoken";
 import { JWT_SECRET } from "./config";
+import { prisma } from "@repo/db/client";
+import { send } from "process";
 import { userInfo } from "os";
 
 const wss = new WebSocketServer({ port: 8080 });
@@ -30,6 +32,7 @@ function checktoken(token: string) {
   }
 }
 
+
 // This event fires when a new clients connects
 wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
   console.log("A new clients connected!");
@@ -52,32 +55,48 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
     isAlive: true,
   });
 
-  ws.on("pong", (ws: WebSocket) => {
+  ws.on("pong", () => {
     const userinfo = clients.get(ws);
     if (!userinfo) {
       return;
     } else {
-      userinfo.isAlive == true;
+      userinfo.isAlive = true;
     }
   });
 
-  // Send a welcome message to the newly connected clients
   ws.send("Welcome to the WebSocket server!");
 
-  // This event fires when the server receives a message from this specific clients
-  ws.on("message", (message: string) => {
-    console.log(`Received message from clients: ${message}`);
-    const parseddata = JSON.parse(message.toString());
-    const userinfo = clients.get(ws);
-    if (!userinfo) {
+  //event fires when recieves a message
+  ws.on("message", async (message: Buffer) => {
+    console.log("message, async (message: string)");
+
+    const messageString = message.toString();
+    const data = JSON.parse(messageString);
+    const wsfromclient = clients.get(ws);
+    const userid = wsfromclient?.userId;
+    if (!data) {
       return;
     }
 
-    
+    if (data.type == "join-room") {
+      const slug = data.slug.toString();
+      if (!slug || typeof slug !== 'string') {
+        return ws.send(JSON.stringify({ error: "room slug is required and it must be a string" }));
+      }
 
-    // Echo the message back to the clients
-    ws.send(`You said: ${message}`);
-  });
+      const findslug = wsfromclient?.rooms.includes(slug);
+      if (findslug) {
+        return ws.send(JSON.stringify({ error: "room already exists" }));
+      } else {
+
+        prisma.room.update({
+          where: {
+          },
+
+        })
+      }
+
+    });
 
   // This event fires when the clients disconnects
   ws.on("close", () => {
