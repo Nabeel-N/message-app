@@ -4,7 +4,6 @@ import { WebSocketServer, WebSocket } from "ws";
 import * as jwt from "jsonwebtoken";
 import { JWT_SECRET } from "./config";
 import { prisma } from "@repo/db/client";
-import { send } from "process";
 import { userInfo } from "os";
 
 const wss = new WebSocketServer({ port: 8080 });
@@ -69,7 +68,6 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
   //event fires when recieves a message
   ws.on("message", async (message: Buffer) => {
     console.log("message, async (message: string)");
-
     const messageString = message.toString();
     const data = JSON.parse(messageString);
     const wsfromclient = clients.get(ws);
@@ -84,9 +82,15 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
         return ws.send(JSON.stringify({ error: "room slug is required and it must be a string" }));
       }
 
-      const findslug = wsfromclient?.rooms.includes(slug);
-      if (findslug) {
-        return ws.send(JSON.stringify({ error: "room already exists" }));
+      const existingroom = await prisma.room.findUnique({
+        where: {
+          slug: slug
+        }
+      })
+
+      if (existingroom) {
+        wsfromclient?.rooms.push(slug);
+        return ws.send(JSON.stringify({ type: "joined-existing-room", slug: slug }));
       }
       const createroom = await prisma.room.create({
         data: {
@@ -100,26 +104,46 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
         }
       })
 
+      wsfromclient?.rooms.push(slug);
       ws.send(JSON.stringify({ type: "room-created", slug: createroom }))
       console.log(createroom)
     }
 
     if (data.type == "chat") {
-      const roomId = data.roomId;
-      const message = data.message;
-      const userId = wsfromclient?.userId;
+      try {
 
-      const createchat = prisma.chat.create({
-        data: {
-          roomId: parseInt(roomId),
-          message: message.toString(),
-          userId: userId?.toString() as string
-        }
+        const roomId = data.roomId;
+        const message = data.message;
+        const userId = wsfromclient?.userId;
 
-      })
-
-      ws.send(JSON.stringify({ type: "chat-created-", created: createchat }))
-      console.log(createchat)
+        // 2. Use the 'connect' syntax for both the user and the room
+        const savedChat = await prisma.chat.create({
+          data: {
+            message: message,
+            user: {
+              connect: {
+                id: userId
+              }
+            },
+            room: {
+              connect: {
+                slug: roomId.toString()
+              }
+            }
+          }
+        });
+        clients.forEach((userInfo: UserInfo, ws: WebSocket) => {
+          if (userInfo.rooms.includes(roomId)) {
+            ws.send(JSON.stringify({
+              type: "new message", chat: savedChat
+            }))
+          }
+        })
+        ws.send(JSON.stringify({ type: "chat-created-", created: savedChat }))
+        console.log(savedChat)
+      } catch (e) {
+        console.error(e + "this is a error from chat")
+      }
     }
 
 
@@ -135,5 +159,9 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
   // This event fires if there's an error with the clients's connection
   ws.on("error", (error) => {
     console.error("WebSocket error:", error);
+  });
+  ws.on("close", () => {
+    console.log("Client has disconnected.");
+    clients.delete(ws);
   });
 });
