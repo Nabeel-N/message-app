@@ -116,7 +116,6 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
         const message = data.message;
         const userId = wsfromclient?.userId;
 
-        // 2. Use the 'connect' syntax for both the user and the room
         const savedChat = await prisma.chat.create({
           data: {
             message: message,
@@ -139,7 +138,6 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
             }))
           }
         })
-        ws.send(JSON.stringify({ type: "chat-created-", created: savedChat }))
         console.log(savedChat)
       } catch (e) {
         console.error(e + "this is a error from chat")
@@ -157,11 +155,25 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
   });
 
   // This event fires if there's an error with the clients's connection
-  ws.on("error", (error) => {
-    console.error("WebSocket error:", error);
-  });
   ws.on("close", () => {
     console.log("Client has disconnected.");
     clients.delete(ws);
   });
+
 });
+
+const interval = setInterval(() => {
+  clients.forEach((u: UserInfo, w: WebSocket) => {
+    if (u.isAlive == false) {
+
+      console.log(`Terminating inactive connection for user: ${u.userId}`);
+      w.terminate();
+    }
+    u.isAlive = false;
+    w.ping()
+  })
+}, 30000)
+
+wss.on('close', () => {
+  clearInterval(interval);
+})
