@@ -5,10 +5,33 @@ import cors from "cors";
 import { JWT_SECRET } from "./config";
 import { prisma } from "@repo/db/client";
 import * as bcrypt from "bcrypt";
+import { authenticateToken } from "./middleware";
 
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+async function Atuthorization(userId: string, slug: string): Promise<boolean> {
+  if (!userId) {
+    return false;
+  }
+  const finduserId = await prisma.room.findFirst({
+    where: {
+      slug: slug,
+      users: {
+        some: {
+          id: userId,
+        }
+      }
+    }
+  })
+  if (!finduserId) {
+    return false;
+  }
+  console.log(finduserId);
+  return !!finduserId;
+}
+
 app.post("/api/signup", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -83,8 +106,43 @@ app.post("/api/signin", async (req, res) => {
   });
 });
 
+app.get("api/rooms/:slug/messages", authenticateToken, async (req: Request, res: Response) => {
+  const slug = req.params.slug;
+  const decodeduser = (req as any).user;
+  const userId = decodeduser.userId;
+  if (!userId) {
+    res.status(401).send("Userid is not found in token");
+  }
+  const auth = await Atuthorization(userId, slug as string);
+  if (!auth) {
+    return res.status(403).json({ message: "Forbidden: You are not a member of this room." });
+  }
+  const fetchmessages = await prisma.chat.findMany({
+    where: {
+      room: {
+        slug: slug,
+      },
+    },
 
+    orderBy: {
+      createdAt: "desc"
+    },
 
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          photo: true,
+
+        },
+
+      }
+    },
+    take: 50,
+  })
+  res.status(200).json(fetchmessages);
+})
 const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
