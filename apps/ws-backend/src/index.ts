@@ -79,7 +79,7 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
     }
 
     if (data.type == "join-room") {
-      const slug = data.slug.toString();
+      const slug = data.slug;
       if (!slug || typeof slug !== 'string') {
         return ws.send(JSON.stringify({ error: "room slug is required and it must be a string" }));
       }
@@ -87,16 +87,45 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
       const findslug = wsfromclient?.rooms.includes(slug);
       if (findslug) {
         return ws.send(JSON.stringify({ error: "room already exists" }));
-      } else {
-
-        prisma.room.update({
-          where: {
-          },
-
-        })
       }
+      const createroom = await prisma.room.create({
+        data: {
+          slug: slug,
+          admin: {
+            connect: {
+              id: userid
+            }
+          }
 
-    });
+        }
+      })
+
+      ws.send(JSON.stringify({ type: "room-created", slug: createroom }))
+      console.log(createroom)
+    }
+
+    if (data.type == "chat") {
+      const roomId = data.roomId;
+      const message = data.message;
+      const userId = wsfromclient?.userId;
+
+      const createchat = prisma.chat.create({
+        data: {
+          roomId: parseInt(roomId),
+          message: message.toString(),
+          userId: userId?.toString() as string
+        }
+
+      })
+
+      ws.send(JSON.stringify({ type: "chat-created-", created: createchat }))
+      console.log(createchat)
+    }
+
+
+
+  });
+
 
   // This event fires when the clients disconnects
   ws.on("close", () => {
