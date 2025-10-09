@@ -5,7 +5,17 @@
       {
         "name": "next"
       }
-    ]
+    ],
+    "jsx": "preserve" // <-- ADD THIS LINE
+    ,
+    "target": "ES2017",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "incremental": true,
+    "resolveJsonModule": true
   },
   "include": [
     "**/*.ts",

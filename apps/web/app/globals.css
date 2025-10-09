@@ -1,12 +1,18 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #ffffff;
+    --foreground: #171717;
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background: #0a0a0a;
+      --foreground: #ededed;
+    }
   }
 }
 
@@ -32,19 +38,20 @@ a {
   text-decoration: none;
 }
 
-.imgDark {
-  display: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-
-  .imgLight {
+@layer utilities {
+  .imgDark {
     display: none;
   }
-  .imgDark {
-    display: unset;
+  
+  @media (prefers-color-scheme: dark) {
+    html {
+      color-scheme: dark;
+    }
+    .imgLight {
+      display: none;
+    }
+    .imgDark {
+      display: unset;
+    }
   }
 }

@@ -5,11 +5,11 @@ import * as jwt from "jsonwebtoken";
 import { JWT_SECRET } from "./config";
 import { prisma } from "@repo/db/client";
 import { userInfo } from "os";
+import { setSourceMapsEnabled } from "process";
 
 const wss = new WebSocketServer({ port: 8080 });
 
 console.log("WebSocket server started on port 8080");
-
 interface UserInfo {
   userId: string;
   rooms: string[];

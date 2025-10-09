@@ -10,7 +10,6 @@ import { authenticateToken } from "./middleware";
 const app = express();
 app.use(express.json());
 app.use(cors());
-
 async function Atuthorization(userId: string, slug: string): Promise<boolean> {
   if (!userId) {
     return false;
@@ -29,6 +28,7 @@ async function Atuthorization(userId: string, slug: string): Promise<boolean> {
     return false;
   }
   console.log(finduserId);
+
   return !!finduserId;
 }
 
@@ -141,7 +141,7 @@ app.get("api/rooms/:slug/messages", authenticateToken, async (req: Request, res:
     },
     take: 50,
   })
-  res.status(200).json(fetchmessages);
+  return res.status(200).json(fetchmessages);
 })
 const PORT = process.env.PORT || 5001;
 
