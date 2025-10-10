@@ -38,13 +38,11 @@ export default function Signup() {
     }
 
     try {
-      // FIX 1: Use the correct, full URL for your backend API
       const response = await fetch("http://localhost:5001/api/signup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        // FIX 2: Include the 'name' field in the request body
         body: JSON.stringify({
           name: name,
           email: email,

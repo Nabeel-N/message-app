@@ -168,7 +168,9 @@ app.get("/api/me/rooms", authenticateToken, async (req, res) => {
         messsage: "user not found"
       })
     }
-    return res.status(201).json(userwithrooms.rooms)
+    return res.status(201).json({
+      room: userwithrooms.rooms
+    })
   } catch (e) {
     console.error(e + "api/me/rooms did not found the user");
     res.status(500).json({ message: "Internal Server Error" });
@@ -176,6 +178,8 @@ app.get("/api/me/rooms", authenticateToken, async (req, res) => {
 
 
 })
+
+
 const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {

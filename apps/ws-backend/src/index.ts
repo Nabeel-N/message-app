@@ -4,8 +4,6 @@ import { WebSocketServer, WebSocket } from "ws";
 import * as jwt from "jsonwebtoken";
 import { JWT_SECRET } from "./config";
 import { prisma } from "@repo/db/client";
-import { userInfo } from "os";
-import { setSourceMapsEnabled } from "process";
 
 const wss = new WebSocketServer({ port: 8080 });
 
@@ -68,10 +66,12 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
   //event fires when recieves a message
   ws.on("message", async (message: Buffer) => {
     console.log("message, async (message: string)");
+
     const messageString = message.toString();
     const data = JSON.parse(messageString);
     const wsfromclient = clients.get(ws);
     const userid = wsfromclient?.userId;
+
     if (!data) {
       return;
     }
