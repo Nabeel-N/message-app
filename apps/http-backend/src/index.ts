@@ -6,10 +6,20 @@ import { JWT_SECRET } from "./config";
 import { prisma } from "@repo/db/client";
 import * as bcrypt from "bcrypt";
 import { authenticateToken } from "./middleware";
+import { request } from "http";
 
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+async function find_slug(slug: string, userid: string): Promise<boolean> {
+  const findroom = await prisma.room.findUnique({
+    where: {
+      slug: slug
+    }
+  })
+  return !!findroom;
+}
 async function Atuthorization(userId: string, slug: string): Promise<boolean> {
   if (!userId) {
     return false;
@@ -105,6 +115,53 @@ app.post("/api/signin", async (req, res) => {
     token: token,
   });
 });
+
+app.post("/api/create-room", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const decodeduser = (req as any).user;
+    const userId = decodeduser.userId
+    if (!userId) {
+      return res.status(401).send("Userid is not found");
+    }
+
+    const slug = req.body.slug;
+
+    if (typeof slug != "string" && userId === undefined || null) {
+      res.status(401).json({
+        message: "slug cannot be empty"
+      })
+      return;
+    }
+    const findslug = await find_slug(slug, userId);
+    if (findslug) {
+      return res.status(401).json({
+        message: "room already Present"
+      });
+    }
+
+    const createroom = await prisma.room.create({
+      data: {
+        slug: slug,
+        adminId: userId,
+        users: {
+          connect: {
+            id: userId
+          }
+        }
+      }
+    })
+    res.status(201).json({
+      message: createroom
+    })
+    console.log(createroom);
+  } catch (e) {
+    console.error(e + "error from the create-room")
+    res.status(500).json({
+      error: "Internal Server Error"
+    })
+  }
+
+})
 
 app.get("/api/rooms/:slug/messages", authenticateToken, async (req: Request, res: Response) => {
   const slug = req.params.slug;
