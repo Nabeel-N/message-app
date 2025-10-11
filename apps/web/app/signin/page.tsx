@@ -42,7 +42,7 @@ export default function Signin() {
       if (response.ok) {
         console.log("Login successful:", data.token);
         localStorage.setItem("token", data.token);
-        router.push('/Home');
+        router.push('/');
       } else {
         setError(data.message || "Login failed. Please try again.");
         setLoading(false);

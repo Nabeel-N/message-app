@@ -106,7 +106,7 @@ app.post("/api/signin", async (req, res) => {
   });
 });
 
-app.get("api/rooms/:slug/messages", authenticateToken, async (req: Request, res: Response) => {
+app.get("/api/rooms/:slug/messages", authenticateToken, async (req: Request, res: Response) => {
   const slug = req.params.slug;
   const decodeduser = (req as any).user;
   const userId = decodeduser.userId;
@@ -165,7 +165,7 @@ app.get("/api/me/rooms", authenticateToken, async (req, res) => {
 
     if (!userwithrooms) {
       return res.status(404).json({
-        messsage: "user not found"
+        message: "user not found"
       })
     }
     return res.status(201).json({
