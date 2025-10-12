@@ -6,7 +6,6 @@ import { JWT_SECRET } from "./config";
 import { prisma } from "@repo/db/client";
 import * as bcrypt from "bcrypt";
 import { authenticateToken } from "./middleware";
-import { request } from "http";
 
 const app = express();
 app.use(express.json());
@@ -163,6 +162,42 @@ app.post("/api/create-room", authenticateToken, async (req: Request, res: Respon
 
 })
 
+
+app.get("/api/me/rooms", authenticateToken, async (req, res) => {
+  try {
+
+    const userId = (req as any).user?.userId;
+    if (!userId) {
+      return res.status(401).json({
+        message: "User is not authenticated"
+      })
+    }
+    const userwithrooms = await prisma.user.findUnique({
+      where: {
+        id: userId
+      },
+      include: {
+        rooms: true
+      }
+    })
+
+    if (!userwithrooms) {
+      return res.status(404).json({
+        message: "user not found"
+      })
+    }
+    return res.status(201).json({
+      room: userwithrooms.rooms
+    })
+  } catch (e) {
+    console.error(e + "api/me/rooms did not found the user");
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+
+
+})
+
+
 app.get("/api/rooms/:slug/messages", authenticateToken, async (req: Request, res: Response) => {
   const slug = req.params.slug;
   const decodeduser = (req as any).user;
@@ -201,40 +236,6 @@ app.get("/api/rooms/:slug/messages", authenticateToken, async (req: Request, res
   return res.status(200).json(fetchmessages);
 })
 
-
-app.get("/api/me/rooms", authenticateToken, async (req, res) => {
-  try {
-
-    const userId = (req as any).user?.userId;
-    if (!userId) {
-      return res.status(401).json({
-        message: "User is not authenticated"
-      })
-    }
-    const userwithrooms = await prisma.user.findUnique({
-      where: {
-        id: userId
-      },
-      include: {
-        rooms: true
-      }
-    })
-
-    if (!userwithrooms) {
-      return res.status(404).json({
-        message: "user not found"
-      })
-    }
-    return res.status(201).json({
-      room: userwithrooms.rooms
-    })
-  } catch (e) {
-    console.error(e + "api/me/rooms did not found the user");
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-
-
-})
 
 
 const PORT = process.env.PORT || 5001;

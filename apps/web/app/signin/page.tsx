@@ -25,33 +25,39 @@ export default function Signin() {
       return;
     }
 
-    try {
-      const response = await fetch("http://localhost:5001/api/signin", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: email,
-          password: password,
-        })
-      });
+    async function fetchdata() {
 
-      const data = await response.json();
+      try {
+        const response = await fetch("http://localhost:5001/api/signin", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email,
+            password: password,
+          })
+        });
 
-      if (response.ok) {
-        console.log("Login successful:", data.token);
-        localStorage.setItem("token", data.token);
-        router.push('/');
-      } else {
-        setError(data.message || "Login failed. Please try again.");
+        const data = await response.json();
+
+        if (response.ok) {
+          console.log("Login successful:", data.token);
+          localStorage.setItem("token", data.token);
+          router.push('/');
+        } else {
+          setError(data.message || "Login failed. Please try again.");
+          setLoading(false);
+        }
+      } catch (e) {
+        console.error("Network error:", e);
+        setError("Could not connect to the server. Please try again later.");
         setLoading(false);
       }
-    } catch (e) {
-      console.error("Network error:", e);
-      setError("Could not connect to the server. Please try again later.");
-      setLoading(false);
     }
+
+    fetchdata();
+
   }
 
   return (
