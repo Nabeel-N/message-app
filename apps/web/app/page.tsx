@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, FormEvent } from "react";
-
+import { useRouter } from "next/navigation";
 interface Room {
   id: number;
   slug: string;
@@ -11,7 +11,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [slug, setSlug] = useState<string>("");
-
+  const router = useRouter();
   useEffect(() => {
     const fetchRooms = async () => {
       try {
@@ -78,7 +78,6 @@ export default function Home() {
 
       const newRoomData = await response.json();
       const newRoom = newRoomData.message;
-
       setData((prevRooms) => [newRoom, ...prevRooms]);
       setSlug("");
       setError(null);
@@ -97,44 +96,49 @@ export default function Home() {
   }
 
   return (
-    <div className="h-screen w-screen bg-gray-800 text-white p-6">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Your Chat Rooms</h1>
+    <div className="h-screen w-screen bg-gradient-to-r from-green-800 to-orange-700">
+      <div className=" rounded-xl bg-gradient-to-r from-blue-500 via-green-400 to-purple-700">
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-3xl font-bold mb-6 flex items-center justify-center ">Your Chat Rooms</h1>
 
-        <form onSubmit={handleCreateRoom} className="mb-8 flex gap-2">
-          <input
-            type="text"
-            value={slug}
-            onChange={(e) => setSlug(e.target.value)}
-            placeholder="Enter new room slug"
-            className="flex-grow p-2 bg-gray-700 text-white rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-500"
-          />
-          <button type="submit" className="bg-violet-600 hover:bg-violet-700 font-bold py-2 px-4 rounded-lg transition-colors">
-            Create Room
-          </button>
-        </form>
+          <form onSubmit={handleCreateRoom} className="mb-8 flex gap-2">
+            <input
+              type="text"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              placeholder="Enter new room slug"
+              className="flex-grow p-2 bg-gray-700 text-white rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-500"
+            />
+            <button type="submit" className="bg-violet-600 hover:bg-violet-700 font-bold py-2 px-4 rounded-lg transition-colors">
+              Create Room
+            </button>
+          </form>
 
-        {error && (
-          <div className="text-red-500 p-3 mb-4 bg-red-900/50 rounded-lg text-center">
-            <p>Error: {error}</p>
-          </div>
-        )}
-
-        <ul>
-          {data && data.length > 0 ? (
-            data.map((room) => (
-              <li
-                key={room.id}
-                className="bg-gray-700 p-4 mb-3 rounded-lg hover:bg-gray-600 transition-colors cursor-pointer"
-              >
-                <p className="text-lg font-semibold text-gray-200">/{room.slug}</p>
-              </li>
-            ))
-          ) : (
-            <p>You haven't joined any rooms yet.</p>
+          {error && (
+            <div className="text-red-500 p-3 mb-4 bg-red-900/50 rounded-lg text-center">
+              <p>Error: {error}</p>
+            </div>
           )}
-        </ul>
-      </div>
+
+          <ul>
+            {data && data.length > 0 ? (
+              data.map((room) => (
+                <li
+                  key={room.id}
+                  className="bg-gray-700 p-4 mb-3 rounded-lg hover:bg-gray-600 transition-colors cursor-pointer"
+                  onClick={() => {
+                    router.push(`/chat/${encodeURIComponent(room.slug)}`);
+                  }}
+                >
+                  <p className="text-lg font-semibold text-gray-200">/{room.slug}</p>
+                </li>
+              ))
+            ) : (
+              <p>You haven't joined any rooms yet.</p>
+            )}
+          </ul>
+        </div>
+      </div >
     </div>
   );
 }
