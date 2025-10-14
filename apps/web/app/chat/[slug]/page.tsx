@@ -1,117 +1,111 @@
 "use client"
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState, useRef } from "react";
 
-interface MessagePayload {
-  type: string;
-  slug?: string;
-  message?: string;
-  roomId?: string;
-  chat?: {
-    id: number;
-    message: string;
-  }
+interface UnifiedMessage {
+  id: number;
+  text: string;
+  userName: string;
 }
 
-export default function Chat() {
+export default function ChatPage({ params }: { params: { slug: string } }) {
+  const { slug } = params;
   const [socket, setSocket] = useState<WebSocket | null>(null);
-  const [messages, setMessages] = useState<MessagePayload[]>([]);
+  const [messages, setMessages] = useState<UnifiedMessage[]>([]);
   const [currentMessage, setCurrentMessage] = useState<string>("");
-  const [roomSlug, setRoomSlug] = useState<string>("");
+  const messagesEndRef = useRef<null | HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchHistoricalMessages = async () => {
+      const token = localStorage.getItem("token");
+      if (!slug || !token) return;
+
+      try {
+        const response = await fetch(`http://localhost:5001/api/rooms/${slug}/messages`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error("Failed to fetch messages.");
+
+        const historicalData: { id: number; message: string; user: { name: string } }[] = await response.json();
+
+        const formattedMessages = historicalData.map(msg => ({
+          id: msg.id,
+          text: msg.message,
+          userName: msg.user.name,
+        }));
+
+        setMessages(formattedMessages.reverse());
+      } catch (error) {
+        console.error("Failed to fetch history:", error);
+      }
+    };
+    fetchHistoricalMessages();
+  }, [slug]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      console.error("Authentication token not found.");
-      return;
-    }
-
-    const pathParts = window.location.pathname.split('/');
-    const slug = pathParts[pathParts.length - 1];
-    if (!slug) {
-      console.error("Room slug not found in URL.");
-      return;
-    }
-    setRoomSlug(slug);
+    if (!token) return;
 
     const ws = new WebSocket(`ws://localhost:8080?token=${token}`);
 
     ws.onopen = () => {
       console.log('Connected to WebSocket server');
       setSocket(ws);
-
-      ws.send(JSON.stringify({
-        type: "join-room",
-        slug: slug
-      }));
+      ws.send(JSON.stringify({ type: "join-room", slug: slug }));
     };
 
     ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      setMessages((prevMessages) => [...prevMessages, message]);
+      const data = JSON.parse(event.data);
+
+      if (data.type === 'new message' && data.chat) {
+        const newMessage: UnifiedMessage = {
+          id: data.chat.id,
+          text: data.chat.message,
+          userName: data.chat.user.name,
+        };
+        setMessages((prevMessages) => [...prevMessages, newMessage]);
+      }
     };
 
-    ws.onclose = () => {
-      console.log('Disconnected from WebSocket server');
-      setSocket(null);
-    };
+    ws.onclose = () => setSocket(null);
+    ws.onerror = (error) => console.error('WebSocket error:', error);
 
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
+    return () => ws.close();
+  }, [slug]);
 
-    return () => {
-      console.log("Closing WebSocket connection.");
-      ws.close();
-    };
-  }, []);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!currentMessage.trim() || !socket) {
-      return;
-    }
+    if (!currentMessage.trim() || !socket) return;
 
-    const messagePayload = {
+    socket.send(JSON.stringify({
       type: "chat",
-      roomId: roomSlug,
+      roomId: slug,
       message: currentMessage
-    };
-
-    socket.send(JSON.stringify(messagePayload));
+    }));
     setCurrentMessage("");
   };
 
   return (
     <div className="h-screen w-screen bg-gray-800 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-2xl h-full flex flex-col bg-gray-900 rounded-lg shadow-xl">
-        {/* Message Display Area */}
+        <div className="p-4 bg-gray-700 text-white text-center font-bold">
+          <h2>Room: /{slug}</h2>
+        </div>
+
         <div className="flex-1 p-4 overflow-y-auto">
-          <ul className="space-y-2">
-            {messages.map((msg, index) => {
-              let content = '';
-              let isNotification = false;
-
-              if (msg.type === 'new message' && msg.chat) {
-                content = msg.chat.message;
-              } else if (msg.type === 'joined-existing-room' || msg.type === 'room-created') {
-                content = `Notification: You have joined room "${msg.slug}"`;
-                isNotification = true;
-              } else {
-                content = JSON.stringify(msg);
-              }
-
-              return (
-                <li
-                  key={index}
-                  className={`p-2 rounded-lg text-white w-fit ${isNotification
-                    ? 'bg-gray-700 text-center text-xs mx-auto'
-                    : 'bg-blue-600'
-                    }`}
-                >
-                  {content}
-                </li>
-              );
-            })}
+          <ul className="space-y-4">
+            {messages.map((msg) => (
+              <li key={msg.id} className="flex flex-col">
+                <span className="text-sm text-gray-400">{msg.userName}</span>
+                <div className="p-3 rounded-lg text-white bg-blue-600 w-fit max-w-xs break-words">
+                  {msg.text}
+                </div>
+              </li>
+            ))}
+            <div ref={messagesEndRef} />
           </ul>
         </div>
 
