@@ -98,9 +98,11 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
           admin: {
             connect: {
               id: userid
-            }
-          }
-
+            },
+          },
+          users: {
+            connect: { id: userid },
+          },
         }
       })
 
@@ -109,13 +111,11 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
       console.log(createroom)
     }
 
-    if (data.type == "chat") {
+    if (data.type === "chat") {
       try {
-
         const roomId = data.roomId;
         const message = data.message;
         const userId = wsfromclient?.userId;
-
         const savedChat = await prisma.chat.create({
           data: {
             message: message,
@@ -131,10 +131,22 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
             }
           }
         });
+        const chatwithuser = await prisma.chat.findUnique({
+          where: {
+            id: savedChat.id,
+          },
+          include: {
+            user: {
+              select: {
+                name: true,
+              }
+            }
+          }
+        })
         clients.forEach((userInfo: UserInfo, ws: WebSocket) => {
           if (userInfo.rooms.includes(roomId)) {
             ws.send(JSON.stringify({
-              type: "new message", chat: savedChat
+              type: "new message", chat: chatwithuser
             }))
           }
         })
