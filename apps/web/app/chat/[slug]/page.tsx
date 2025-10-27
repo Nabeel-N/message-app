@@ -13,7 +13,7 @@ interface UnifiedMessage {
   id: number;
   text: string;
   userName: string;
-  createdAt: string; // Added for correct timestamp
+  createdAt: string;
 }
 
 interface CurrentUser {
@@ -24,27 +24,21 @@ interface CurrentUser {
 interface HistoryMessage {
   id: number;
   message: string;
-  createdAt: string; // Added for correct timestamp
+  createdAt: string;
   user: { name: string };
 }
 
 export default function ChatPage({ params }: { params: { slug: string } }) {
-  // -------------------
-  // *** THE FIX ***
-  // Copy params.slug into state immediately.
-  // Then, use the 'slug' state variable everywhere else.
+
   const [slug, setSlug] = useState<string>(params.slug);
-  // -------------------
 
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [messages, setMessages] = useState<UnifiedMessage[]>([]);
   const [currentMessage, setCurrentMessage] = useState<string>("");
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
-  // Fix for "currentUser"
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
-  // Fetch the current user's info
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   useEffect(() => {
     async function fetchMe() {
       const token = localStorage.getItem("token");
@@ -64,14 +58,13 @@ export default function ChatPage({ params }: { params: { slug: string } }) {
     fetchMe();
   }, []);
 
-  
+
   useEffect(() => {
     async function fetchhistoricalmessages() {
       const token = localStorage.getItem("token");
-      // Use the 'slug' state variable
+
       if (!slug || !token) return;
       try {
-        // Use the 'slug' state variable
         const response = await fetch(
           `http://localhost:5001/api/rooms/${slug}/messages`,
           {
@@ -86,7 +79,7 @@ export default function ChatPage({ params }: { params: { slug: string } }) {
           id: msg.id,
           text: msg.message,
           userName: msg.user.name,
-          createdAt: msg.createdAt, 
+          createdAt: msg.createdAt,
         }));
 
         setMessages(formattedMessages.reverse());
@@ -95,46 +88,42 @@ export default function ChatPage({ params }: { params: { slug: string } }) {
       }
     }
     fetchhistoricalmessages();
-   
+
   }, [slug]);
 
   // WebSocket connection
   useEffect(() => {
-    const websocketfun = () => {
-      const token = localStorage.getItem("token");
-      if (!token) return;
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-      const ws = new WebSocket(`ws://localhost:8080?token=${token}`);
+    const ws = new WebSocket(`ws://localhost:8080?token=${token}`);
 
-      ws.onopen = () => {
-        console.log("Connected to WebSocket server");
-        setSocket(ws);
-        // Use the 'slug' state variable
-        ws.send(JSON.stringify({ type: "join-room", slug: slug }));
-      };
-
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-
-        if (data.type === "new message" && data.chat) {
-          const newMessage: UnifiedMessage = {
-            id: data.chat.id,
-            text: data.chat.message,
-            userName: data.chat.user.name,
-            createdAt: data.chat.createdAt, 
-          };
-          setMessages((prevMessages) => [...prevMessages, newMessage]);
-        }
-
-        
-      };
-
-      ws.onclose = () => setSocket(null);
-      ws.onerror = (error) => console.error("WebSocket error:", error);
-
-      return () => ws.close();
+    ws.onopen = () => {
+      console.log("Connected to WebSocket server");
+      setSocket(ws);
+      ws.send(JSON.stringify({ type: "join-room", slug: slug }));
     };
-    websocketfun();
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.type === "new message" && data.chat) {
+        const newMessage: UnifiedMessage = {
+          id: data.chat.id,
+          text: data.chat.message,
+          userName: data.chat.user.name,
+          createdAt: data.chat.createdAt,
+        };
+        setMessages((prevMessages) => [...prevMessages, newMessage]);
+      }
+
+
+    };
+
+    ws.onclose = () => setSocket(null);
+    ws.onerror = (error) => console.error("WebSocket error:", error);
+
+    return () => ws.close();
   }, [slug]);
 
   // Scroll to bottom
@@ -149,7 +138,7 @@ export default function ChatPage({ params }: { params: { slug: string } }) {
     socket.send(
       JSON.stringify({
         type: "chat",
-        roomId: slug, 
+        roomId: slug,
         message: currentMessage,
       })
     );
@@ -201,9 +190,8 @@ export default function ChatPage({ params }: { params: { slug: string } }) {
                 className={`flex ${isOwnMessage(msg.userName) ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[75%] md:max-w-[65%] rounded-lg px-3 py-2 shadow-md ${
-                    isOwnMessage(msg.userName) ? "bg-[#005c4b]" : "bg-[#202c33]"
-                  }`}
+                  className={`max-w-[75%] md:max-w-[65%] rounded-lg px-3 py-2 shadow-md ${isOwnMessage(msg.userName) ? "bg-[#005c4b]" : "bg-[#202c33]"
+                    }`}
                 >
                   {!isOwnMessage(msg.userName) && (
                     <p className="text-xs font-semibold text-[#00a884] mb-1">
