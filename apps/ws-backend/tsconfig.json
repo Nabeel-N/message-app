@@ -2,13 +2,9 @@
   "extends": "../../packages/typescript-config/base.json",
   "compilerOptions": {
     "module": "nodenext",
-    "moduleResolution": "nodenext"
-    // ... your other options like outDir
+    "moduleResolution": "nodenext",
+    "outDir": "./dist"
   },
-  "include": [
-    "src"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["src"],
+  "exclude": ["node_modules"]
 }
