@@ -12,7 +12,7 @@ export default function App() {
       <div className="flex justify-center items-center">
         <Navbar />
       </div>
-      <div className="mt-7 bg-zinc-500 p-1.5 flex items-center justify-center w-[190px] mx-auto rounded-md">
+      <div className="mt-7 bg-white p-1.5 flex items-center justify-center w-[190px] mx-auto rounded-md">
         <Navbar_text text="Increase Aov Value" fontsize="text-sm" />
       </div>
       <div className="mt-3">
@@ -29,27 +29,24 @@ export default function App() {
         </div>
         <Install_Custom text={"install Customizer"} />
       </div>
-      <div className="mb-8">
-        <div className="relative mt-2">
-          <Card />
-          <div className="absolute  top-0 left-8 rotate-12">
-            <Slidediv text="Change Quantities / Remove Itmes" />
-            <div className="mt-2">
-              <Slidedowndiv />
-            </div>
+      <div className="relative mt-2">
+        <Card />
+        <div className="absolute  top-[-120px] left-8 rotate-12">
+          <Slidediv text="Change Quantities / Remove Itmes" />
+          <div className="mt-2">
+            <Slidedowndiv />
           </div>
-          <div className="absolute top-0 right-8 -rotate-12">
-            <Slidediv text="Change Quantities / Remove Itmes" />
-            <div className="mt-2">
-              <Slidedowndiv />
-            </div>
+        </div>
+        <div className="absolute top-[-120px] right-8 -rotate-12">
+          <Slidediv text="Change Quantities / Remove Itmes" />
+          <div className="mt-2">
+            <Slidedowndiv />
           </div>
         </div>
       </div>
-
       {/* Right side */}
       <div className="relative">
-        <div className="absolute top-[-20px] right-8 rotate-12">
+        <div className="absolute top-[-120px] right-8 rotate-12">
           <div className="ml-10 space-y-2">
             <Slidediv text="Change Quantities / Remove Itmes" />
           </div>
@@ -61,7 +58,7 @@ export default function App() {
 
       {/* Left side - mirror of right */}
       <div className="relative">
-        <div className="absolute top-[-20px] left-8 -rotate-12">
+        <div className="absolute top-[-120px] left-8 -rotate-12">
           <div className="ml-10 space-y-2">
             <Slidediv text="Change Quantities / Remove Itmes" />
           </div>
@@ -71,6 +68,12 @@ export default function App() {
         </div>
       </div>
     </div>
+    <div className="flex flex-row space-x-2">
+      <Cardbelow size="p-30" color=" bg-gradient-to-b from-orange-800  via-orange-200 via-20% to-orange-800 to-90%" text="Card below" rounded="large" />
+      <Cardbelow size="p-30" color=" bg-gradient-to-b from-orange-800  via-orange-200 via-20% to-orange-800 to-90%" text="Card below" rounded="large" />
+      <Cardbelow size="p-30" color=" bg-gradient-to-b from-orange-800  via-orange-200 via-20% to-orange-800 to-90%" text="Card below" rounded="large" />
+    </div>
+    <Footer />
   </div>
 }
 function Navbar() {
@@ -157,12 +160,23 @@ function Slidediv({ text }: SlidedivProps) {
   return <div className=" w-[275px] p-1 text-black rounded-md  bg-white font-medium text-md">{text}</div>
 }
 function Slidedowndiv() {
-  return <div className="px-34 py-16 rounded-xl bg-white    border-1 border-stone-500">dsl</div>
+  return <div className="px-34 py-10 rounded-xl bg-white overflow-hidden   border-1 border-stone-500">
+    <div className="flex items-center justify-center mb-12">
+      <div className=" text-md text-zinc-600 font-normal p-2 w-[260px] rounded-xl bg-gray-300">
+        +9101234567
+      </div>
+    </div>
+    <div className="flex items-center justify-center mt-6">
+      <div className="p-2 text-zinc-600 font-normal w-[260px] rounded-xl bg-gray-300 ">
+        email@example.com
+      </div>
+    </div>
+  </div>
 }
 
 
 function CardSmall() {
-  return <div className="bg-white  rounded-xl px-34 ml-4 mr-12 mb-32 py-12 w-[260px]">
+  return <div className="bg-white  rounded-xl px-34 ml-4 mr-12 mb-32 py-6 w-[260px]">
 
     <div className="ml-1">
       <h1 className="text-black font-medium text-md">Phone</h1>
@@ -173,6 +187,20 @@ function CardSmall() {
     </div>
   </div>
 }
+interface CardbelowProps {
+  size: string;
+  color: string;
+  text: ReactNode;
+  rounded: "small" | "large" | "medium";
+}
+function Cardbelow({ size, color, text, rounded }: CardbelowProps) {
+  return <div className={` w-1/3  ${size} ${color} ${rounded === "large" ? "rounded-3xl" : "rounded-md"} border-2 py-40  border-white`}>{text}</div>
+}
 
+function Footer() {
+  return <div className="p-20 overflow-hidden bg-gradient-to-b mt-2 from-yellow-300 to rounded-3xl  w-full">
+    <div className="bg-red-400 p-20 rounded-full w-fit">
 
-
+    </div>
+  </div>
+}

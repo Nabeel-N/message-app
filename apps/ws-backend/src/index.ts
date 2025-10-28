@@ -61,8 +61,10 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
     }
   });
 
-  ws.send("Welcome to the WebSocket server!");
-
+  ws.send(JSON.stringify({
+    type: "welcome",
+    message: "welcome to WebSocket server!"
+  }))
   //event fires when recieves a message
   ws.on("message", async (message: Buffer) => {
     console.log("message, async (message: string)");

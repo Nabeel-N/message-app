@@ -36,35 +36,38 @@ export default function Signup() {
       setLoading(false);
       return;
     }
+    const fetchsignupdata = async () => {
 
-    try {
-      const response = await fetch("http://localhost:5001/api/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: name,
-          email: email,
-          password: password,
-        }),
-      });
+      try {
+        const response = await fetch("http://localhost:5001/api/signup", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: name,
+            email: email,
+            password: password,
+          }),
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (response.ok) {
-        console.log("Signup successful:", data.token);
-        localStorage.setItem("token", data.token);
-        router.push("/signin");
-      } else {
-        setError(data.message || "Signup failed. Please try again.");
+        if (response.ok) {
+          console.log("Signup successful:", data.token);
+          localStorage.setItem("token", data.token);
+          router.push("/signin");
+        } else {
+          setError(data.message || "Signup failed. Please try again.");
+          setLoading(false);
+        }
+      } catch (e) {
+        console.error("Network error:", e);
+        setError("Could not connect to the server.");
         setLoading(false);
       }
-    } catch (e) {
-      console.error("Network error:", e);
-      setError("Could not connect to the server.");
-      setLoading(false);
     }
+    fetchsignupdata();
   }
 
   return (
