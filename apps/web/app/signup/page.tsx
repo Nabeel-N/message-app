@@ -36,8 +36,8 @@ export default function Signup() {
       setLoading(false);
       return;
     }
-    const fetchsignupdata = async () => {
 
+    const fetchsignupdata = async () => {
       try {
         const response = await fetch("http://localhost:5001/api/signup", {
           method: "POST",

@@ -128,23 +128,19 @@ export default function ChatPage({ params }: { params: Promise<{ slug: string }>
 
         ws.onmessage = (event) => {
           try {
-            // Check if message is JSON
             if (typeof event.data !== 'string') {
               console.log("Received non-string message:", event.data);
               return;
             }
 
-            // Try to parse as JSON
             let data;
             try {
               data = JSON.parse(event.data);
             } catch (parseError) {
-              // If it's not JSON, it might be a welcome message or plain text
               console.log("Received plain text message:", event.data);
               return;
             }
 
-            // Handle different message types
             if (data.type === "new message" && data.chat) {
               const newMessage: UnifiedMessage = {
                 id: data.chat.id,
@@ -153,7 +149,6 @@ export default function ChatPage({ params }: { params: Promise<{ slug: string }>
                 createdAt: data.chat.createdAt,
               };
 
-              // Check if message already exists (prevent duplicates)
               setMessages((prevMessages) => {
                 const exists = prevMessages.some(msg => msg.id === newMessage.id);
                 if (exists) {
@@ -177,7 +172,6 @@ export default function ChatPage({ params }: { params: Promise<{ slug: string }>
           setSocket(null);
           setConnectionStatus('disconnected');
 
-          // Only attempt reconnect if it wasn't an intentional close
           if (!isIntentionalClose && reconnectAttemptsRef.current < maxReconnectAttempts) {
             reconnectAttemptsRef.current++;
             const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 10000); // Exponential backoff
