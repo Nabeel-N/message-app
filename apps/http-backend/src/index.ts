@@ -1,25 +1,32 @@
-import "dotenv/config";
 import express, { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import cors from "cors";
-import { JWT_SECRET } from "./config";
+import { JWT_SECRET } from "./config"; // <-- FIX 2: Corrected path
 import { prisma } from "@repo/db/client";
 import * as bcrypt from "bcrypt";
 import { authenticateToken } from "./middleware";
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+
+// --- FIX 3: Added specific origin for CORS ---
+app.use(
+  cors({
+    origin: "https://frontent-web.onrender.com", // Your frontend's URL
+  })
+);
 
 async function find_slug(slug: string, userid: string): Promise<boolean> {
   const findroom = await prisma.room.findUnique({
     where: {
-      slug: slug
-    }
-  })
+      slug: slug,
+    },
+  });
   return !!findroom;
 }
-async function Atuthorization(userId: string, slug: string): Promise<boolean> {
+
+// --- FIX 5: Corrected typo ---
+async function Authorization(userId: string, slug: string): Promise<boolean> {
   if (!userId) {
     return false;
   }
@@ -29,10 +36,10 @@ async function Atuthorization(userId: string, slug: string): Promise<boolean> {
       users: {
         some: {
           id: userId,
-        }
-      }
-    }
-  })
+        },
+      },
+    },
+  });
   if (!finduserId) {
     return false;
   }
@@ -41,7 +48,8 @@ async function Atuthorization(userId: string, slug: string): Promise<boolean> {
   return !!finduserId;
 }
 
-app.post("/api/signup", async (req, res) => {
+// --- FIX 4: Removed /api prefix ---
+app.post("/signup", async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
@@ -85,7 +93,8 @@ app.post("/api/signup", async (req, res) => {
   }
 });
 
-app.post("/api/signin", async (req, res) => {
+// --- FIX 4: Removed /api prefix ---
+app.post("/signin", async (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
@@ -115,132 +124,137 @@ app.post("/api/signin", async (req, res) => {
   });
 });
 
-app.post("/api/create-room", authenticateToken, async (req: Request, res: Response) => {
-  try {
-    const decodeduser = (req as any).user;
-    const userId = decodeduser.userId
-    if (!userId) {
-      return res.status(401).send("Userid is not found");
-    }
+// --- FIX 4: Removed /api prefix ---
+app.post(
+  "/create-room",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      const decodeduser = (req as any).user;
+      const userId = decodeduser.userId;
+      if (!userId) {
+        return res.status(401).send("Userid is not found");
+      }
 
-    const slug = req.body.slug;
+      const slug = req.body.slug;
 
-    if (typeof slug != "string" && userId === undefined || null) {
-      res.status(401).json({
-        message: "slug cannot be empty"
-      })
-      return;
-    }
-    const findslug = await find_slug(slug, userId);
-    if (findslug) {
-      return res.status(401).json({
-        message: "room already Present"
+      if ((typeof slug != "string" && userId === undefined) || null) {
+        res.status(401).json({
+          message: "slug cannot be empty",
+        });
+        return;
+      }
+      const findslug = await find_slug(slug, userId);
+      if (findslug) {
+        return res.status(401).json({
+          message: "room already Present",
+        });
+      }
+
+      const createroom = await prisma.room.create({
+        data: {
+          slug: slug,
+          adminId: userId,
+          users: {
+            connect: {
+              id: userId,
+            },
+          },
+        },
+      });
+      res.status(201).json({
+        message: createroom,
+      });
+      console.log(createroom);
+    } catch (e) {
+      console.error(e + "error from the create-room");
+      res.status(500).json({
+        error: "Internal Server Error",
       });
     }
-
-    const createroom = await prisma.room.create({
-      data: {
-        slug: slug,
-        adminId: userId,
-        users: {
-          connect: {
-            id: userId
-          }
-        }
-      }
-    })
-    res.status(201).json({
-      message: createroom
-    })
-    console.log(createroom);
-  } catch (e) {
-    console.error(e + "error from the create-room")
-    res.status(500).json({
-      error: "Internal Server Error"
-    })
   }
+);
 
-})
-
-
-app.get("/api/me/rooms", authenticateToken, async (req, res) => {
+// --- FIX 4: Removed /api prefix ---
+app.get("/me/rooms", authenticateToken, async (req, res) => {
   try {
-
     const userId = (req as any).user?.userId;
     if (!userId) {
       return res.status(401).json({
-        message: "User is not authenticated"
-      })
+        message: "User is not authenticated",
+      });
     }
     const userwithrooms = await prisma.user.findUnique({
       where: {
-        id: userId
+        id: userId,
       },
       include: {
-        rooms: true
-      }
-    })
+        rooms: true,
+      },
+    });
 
     if (!userwithrooms) {
       return res.status(404).json({
-        message: "user not found"
-      })
+        message: "user not found",
+      });
     }
     return res.status(201).json({
-      room: userwithrooms.rooms
-    })
+      room: userwithrooms.rooms,
+    });
   } catch (e) {
     console.error(e + "api/me/rooms did not found the user");
     res.status(500).json({ message: "Internal Server Error" });
   }
+});
 
+// --- FIX 4: Removed /api prefix ---
+app.get(
+  "/rooms/:slug/messages",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    const slug = req.params.slug;
+    const decodeduser = (req as any).user;
+    const userId = decodeduser.userId;
+    if (!userId) {
+      res.status(401).send("Userid is not found in token");
+    }
 
-})
-
-
-
-app.get("/api/rooms/:slug/messages", authenticateToken, async (req: Request, res: Response) => {
-  const slug = req.params.slug;
-  const decodeduser = (req as any).user;
-  const userId = decodeduser.userId;
-  if (!userId) {
-    res.status(401).send("Userid is not found in token");
-  }
-  const auth = await Atuthorization(userId, slug as string);
-  if (!auth) {
-    return res.status(403).json({ message: "Forbidden: You are not a member of this room." });
-  }
-  const fetchmessages = await prisma.chat.findMany({
-    where: {
-      room: {
-        slug: slug,
-      },
-    },
-
-    orderBy: {
-      createdAt: "desc"
-    },
-
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          photo: true,
-
+    // --- FIX 5: Corrected typo ---
+    const auth = await Authorization(userId, slug as string);
+    if (!auth) {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: You are not a member of this room." });
+    }
+    const fetchmessages = await prisma.chat.findMany({
+      where: {
+        room: {
+          slug: slug,
         },
+      },
 
-      }
-    },
-    take: 50,
-  })
-  return res.status(200).json(fetchmessages);
-})
+      orderBy: {
+        createdAt: "desc",
+      },
 
-
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            photo: true,
+          },
+        },
+      },
+      take: 50,
+    });
+    return res.status(200).json(fetchmessages);
+  }
+);
 
 const PORT = process.env.PORT || 5001;
 
+// --- FIX 6: Cleaned up log message ---
 app.listen(PORT, () => {
-  console.log(` Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });

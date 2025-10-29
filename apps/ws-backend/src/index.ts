@@ -5,9 +5,9 @@ import * as jwt from "jsonwebtoken";
 import { JWT_SECRET } from "./config";
 import { prisma } from "@repo/db/client";
 
-const wss = new WebSocketServer({ port: 8080 });
-
-console.log("WebSocket server started on port 8080");
+const port = process.env.PORT || 8080;
+const wss = new WebSocketServer({ port: Number(port) });
+console.log(`WebSocket server started on port ${port}`);
 interface UserInfo {
   userId: string;
   rooms: string[];
@@ -28,7 +28,6 @@ function checktoken(token: string) {
     return null;
   }
 }
-
 
 // This event fires when a new clients connects
 wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
@@ -58,13 +57,15 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
       return;
     } else {
       userinfo.isAlive = true;
-    } 
+    }
   });
 
-  ws.send(JSON.stringify({
-    type: "welcome",
-    message: "welcome to WebSocket server!"
-  }))
+  ws.send(
+    JSON.stringify({
+      type: "welcome",
+      message: "welcome to WebSocket server!",
+    })
+  );
   //event fires when recieves a message
   ws.on("message", async (message: Buffer) => {
     console.log("message, async (message: string)");
@@ -80,37 +81,43 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
 
     if (data.type == "join-room") {
       const slug = data.slug;
-      if (!slug || typeof slug !== 'string') {
-        return ws.send(JSON.stringify({ error: "room slug is required and it must be a string" }));
+      if (!slug || typeof slug !== "string") {
+        return ws.send(
+          JSON.stringify({
+            error: "room slug is required and it must be a string",
+          })
+        );
       }
 
       const existingroom = await prisma.room.findUnique({
         where: {
-          slug: slug
-        }
-      })
+          slug: slug,
+        },
+      });
 
       if (existingroom) {
         wsfromclient?.rooms.push(slug);
-        return ws.send(JSON.stringify({ type: "joined-existing-room", slug: slug }));
+        return ws.send(
+          JSON.stringify({ type: "joined-existing-room", slug: slug })
+        );
       }
       const createroom = await prisma.room.create({
         data: {
           slug: slug,
           admin: {
             connect: {
-              id: userid
+              id: userid,
             },
           },
           users: {
             connect: { id: userid },
           },
-        }
-      })
+        },
+      });
 
       wsfromclient?.rooms.push(slug);
-      ws.send(JSON.stringify({ type: "room-created", slug: createroom }))
-      console.log(createroom)
+      ws.send(JSON.stringify({ type: "room-created", slug: createroom }));
+      console.log(createroom);
     }
 
     if (data.type === "chat") {
@@ -123,15 +130,15 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
             message: message,
             user: {
               connect: {
-                id: userId
-              }
+                id: userId,
+              },
             },
             room: {
               connect: {
-                slug: roomId.toString()
-              }
-            }
-          }
+                slug: roomId.toString(),
+              },
+            },
+          },
         });
         const chatwithuser = await prisma.chat.findUnique({
           where: {
@@ -141,27 +148,26 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
             user: {
               select: {
                 name: true,
-              }
-            }
-          }
-        })
+              },
+            },
+          },
+        });
         clients.forEach((userInfo: UserInfo, ws: WebSocket) => {
           if (userInfo.rooms.includes(roomId)) {
-            ws.send(JSON.stringify({
-              type: "new message", chat: chatwithuser
-            }))
+            ws.send(
+              JSON.stringify({
+                type: "new message",
+                chat: chatwithuser,
+              })
+            );
           }
-        })
-        console.log(savedChat)
+        });
+        console.log(savedChat);
       } catch (e) {
-        console.error(e + "this is a error from chat")
+        console.error(e + "this is a error from chat");
       }
     }
-
-
-
   });
-
 
   // This event fires when the clients disconnects
   ws.on("close", () => {
@@ -173,21 +179,19 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
     console.log("Client has disconnected.");
     clients.delete(ws);
   });
-
 });
 
 const interval = setInterval(() => {
   clients.forEach((u: UserInfo, w: WebSocket) => {
     if (u.isAlive == false) {
-
       console.log(`Terminating inactive connection for user: ${u.userId}`);
       w.terminate();
     }
     u.isAlive = false;
-    w.ping()
-  })
-}, 30000)
+    w.ping();
+  });
+}, 30000);
 
-wss.on('close', () => {
+wss.on("close", () => {
   clearInterval(interval);
-})
+});
