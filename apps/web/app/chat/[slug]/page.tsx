@@ -6,7 +6,15 @@ import React, {
   useRef,
   ChangeEvent,
 } from "react";
-import { Send, MoreVertical, Search, ArrowLeft, Users, Phone, Video } from "lucide-react";
+import {
+  Send,
+  MoreVertical,
+  Search,
+  ArrowLeft,
+  Users,
+  Phone,
+  Video,
+} from "lucide-react";
 import { use } from "react";
 
 interface UnifiedMessage {
@@ -28,7 +36,11 @@ interface HistoryMessage {
   user: { name: string };
 }
 
-export default function ChatPage({ params }: { params: Promise<{ slug: string }> }) {
+export default function ChatPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const resolvedParams = use(params);
   const slug = resolvedParams.slug;
 
@@ -36,7 +48,9 @@ export default function ChatPage({ params }: { params: Promise<{ slug: string }>
   const [messages, setMessages] = useState<UnifiedMessage[]>([]);
   const [currentMessage, setCurrentMessage] = useState<string>("");
   const [isTyping, setIsTyping] = useState<boolean>(false);
-  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
+  const [connectionStatus, setConnectionStatus] = useState<
+    "connecting" | "connected" | "disconnected"
+  >("connecting");
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const reconnectAttemptsRef = useRef(0);
@@ -47,7 +61,8 @@ export default function ChatPage({ params }: { params: Promise<{ slug: string }>
       const token = localStorage.getItem("token");
       if (!token) return;
       try {
-        const res = await fetch("http://localhost:5001/api/me", {
+        // --- FIX 1: Using env variable and correct route ---
+        const res = await fetch(`${process.env.NEXT_PUBLIC_HTTP_URL}/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -67,8 +82,9 @@ export default function ChatPage({ params }: { params: Promise<{ slug: string }>
 
       if (!slug || !token) return;
       try {
+        // --- FIX 2: Using env variable and correct route ---
         const response = await fetch(
-          `http://localhost:5001/api/rooms/${slug}/messages`,
+          `${process.env.NEXT_PUBLIC_HTTP_URL}/rooms/${slug}/messages`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -96,7 +112,7 @@ export default function ChatPage({ params }: { params: Promise<{ slug: string }>
     const token = localStorage.getItem("token");
     if (!token) {
       console.error("No token found");
-      setConnectionStatus('disconnected');
+      setConnectionStatus("disconnected");
       return;
     }
 
@@ -107,17 +123,19 @@ export default function ChatPage({ params }: { params: Promise<{ slug: string }>
     const connect = () => {
       if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
         console.error("Max reconnection attempts reached");
-        setConnectionStatus('disconnected');
+        setConnectionStatus("disconnected");
         return;
       }
 
       try {
-        setConnectionStatus('connecting');
-        ws = new WebSocket(`ws://localhost:8080?token=${token}`);
+        setConnectionStatus("connecting");
+        // --- FIX 3: Using WebSocket env variable ---
+        // We assume NEXT_PUBLIC_WS_URL is set to wss://ws-backend-f903.onrender.com
+        ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}?token=${token}`);
 
         ws.onopen = () => {
           console.log("✅ Connected to WebSocket server");
-          setConnectionStatus('connected');
+          setConnectionStatus("connected");
           reconnectAttemptsRef.current = 0;
           setSocket(ws);
 
@@ -128,7 +146,7 @@ export default function ChatPage({ params }: { params: Promise<{ slug: string }>
 
         ws.onmessage = (event) => {
           try {
-            if (typeof event.data !== 'string') {
+            if (typeof event.data !== "string") {
               console.log("Received non-string message:", event.data);
               return;
             }
@@ -150,7 +168,9 @@ export default function ChatPage({ params }: { params: Promise<{ slug: string }>
               };
 
               setMessages((prevMessages) => {
-                const exists = prevMessages.some(msg => msg.id === newMessage.id);
+                const exists = prevMessages.some(
+                  (msg) => msg.id === newMessage.id
+                );
                 if (exists) {
                   return prevMessages;
                 }
@@ -170,27 +190,38 @@ export default function ChatPage({ params }: { params: Promise<{ slug: string }>
         ws.onclose = (event) => {
           console.log("WebSocket closed:", event.code, event.reason);
           setSocket(null);
-          setConnectionStatus('disconnected');
+          setConnectionStatus("disconnected");
 
-          if (!isIntentionalClose && reconnectAttemptsRef.current < maxReconnectAttempts) {
+          if (
+            !isIntentionalClose &&
+            reconnectAttemptsRef.current < maxReconnectAttempts
+          ) {
             reconnectAttemptsRef.current++;
-            const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 10000); // Exponential backoff
-            console.log(`Reconnecting in ${delay}ms... (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts})`);
+            const delay = Math.min(
+              1000 * Math.pow(2, reconnectAttemptsRef.current),
+              10000
+            ); // Exponential backoff
+            console.log(
+              `Reconnecting in ${delay}ms... (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts})`
+            );
             reconnectTimeout = setTimeout(connect, delay);
           }
         };
 
         ws.onerror = (error) => {
           console.error("WebSocket error:", error);
-          setConnectionStatus('disconnected');
+          setConnectionStatus("disconnected");
         };
       } catch (err) {
         console.error("Error creating WebSocket:", err);
-        setConnectionStatus('disconnected');
+        setConnectionStatus("disconnected");
 
         if (reconnectAttemptsRef.current < maxReconnectAttempts) {
           reconnectAttemptsRef.current++;
-          const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 10000);
+          const delay = Math.min(
+            1000 * Math.pow(2, reconnectAttemptsRef.current),
+            10000
+          );
           reconnectTimeout = setTimeout(connect, delay);
         }
       }
@@ -250,13 +281,17 @@ export default function ChatPage({ params }: { params: Promise<{ slug: string }>
           <div className="flex-1 relative z-10">
             <h2 className="text-white font-semibold text-lg">{slug}</h2>
             <div className="flex items-center gap-2">
-              {connectionStatus === 'connected' ? (
+              {connectionStatus === "connected" ? (
                 <>
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                   <p className="text-xs text-purple-100">Online</p>
-                  {isTyping && <p className="text-xs text-purple-200 italic">• typing...</p>}
+                  {isTyping && (
+                    <p className="text-xs text-purple-200 italic">
+                      • typing...
+                    </p>
+                  )}
                 </>
-              ) : connectionStatus === 'connecting' ? (
+              ) : connectionStatus === "connecting" ? (
                 <>
                   <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
                   <p className="text-xs text-purple-200">Connecting...</p>
@@ -306,10 +341,11 @@ export default function ChatPage({ params }: { params: Promise<{ slug: string }>
                 style={{ animationDelay: `${index * 20}ms` }}
               >
                 <div
-                  className={`max-w-[75%] md:max-w-[65%] rounded-2xl px-4 py-3 shadow-lg backdrop-blur-sm transform transition-all hover:scale-[1.02] ${isOwnMessage(msg.userName)
-                    ? "bg-gradient-to-br from-purple-600 to-pink-600 rounded-br-md"
-                    : "bg-slate-700/80 rounded-bl-md border border-slate-600/50"
-                    }`}
+                  className={`max-w-[75%] md:max-w-[65%] rounded-2xl px-4 py-3 shadow-lg backdrop-blur-sm transform transition-all hover:scale-[1.02] ${
+                    isOwnMessage(msg.userName)
+                      ? "bg-gradient-to-br from-purple-600 to-pink-600 rounded-br-md"
+                      : "bg-slate-700/80 rounded-bl-md border border-slate-600/50"
+                  }`}
                 >
                   {!isOwnMessage(msg.userName) && (
                     <p className="text-xs font-semibold text-pink-400 mb-1.5">
@@ -380,13 +416,13 @@ export default function ChatPage({ params }: { params: Promise<{ slug: string }>
             </button>
           </div>
 
-          {!socket && connectionStatus === 'disconnected' && (
+          {!socket && connectionStatus === "disconnected" && (
             <p className="text-xs text-red-400 mt-2 text-center flex items-center justify-center gap-2">
               <span className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></span>
               Connection lost. Refresh the page or check your server.
             </p>
           )}
-          {connectionStatus === 'connecting' && (
+          {connectionStatus === "connecting" && (
             <p className="text-xs text-yellow-400 mt-2 text-center flex items-center justify-center gap-2">
               <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
               Connecting to server...

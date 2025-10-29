@@ -66,7 +66,6 @@ export default function Home() {
         return;
       }
 
-      // --- FIX 2: Using env variable and correct route ---
       const apiEndpoint = `${process.env.NEXT_PUBLIC_HTTP_URL}/create-room`;
 
       const response = await fetch(apiEndpoint, {
