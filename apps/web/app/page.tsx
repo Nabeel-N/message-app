@@ -24,11 +24,15 @@ export default function Home() {
           return;
         }
 
-        const response = await fetch("http://localhost:5001/api/me/rooms", {
-          headers: {
-            "Authorization": `Bearer ${token}`,
-          },
-        });
+        // --- FIX 1: Using env variable and correct route ---
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_HTTP_URL}/me/rooms`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -62,13 +66,14 @@ export default function Home() {
         return;
       }
 
-      const apiEndpoint = "http://localhost:5001/api/create-room";
+      // --- FIX 2: Using env variable and correct route ---
+      const apiEndpoint = `${process.env.NEXT_PUBLIC_HTTP_URL}/create-room`;
 
       const response = await fetch(apiEndpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ slug: slug }),
       });
@@ -83,7 +88,6 @@ export default function Home() {
       setData((prevRooms) => [newRoom, ...prevRooms]);
       setSlug("");
       setError(null);
-
     } catch (e: any) {
       setError(e.message);
     }
@@ -107,8 +111,14 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 relative overflow-hidden">
       {/* Decorative background elements */}
       <div className="absolute top-0 left-0 w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }}></div>
-      <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
+      <div
+        className="absolute bottom-0 right-0 w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"
+        style={{ animationDelay: "1s" }}
+      ></div>
+      <div
+        className="absolute top-1/2 left-1/2 w-96 h-96 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"
+        style={{ animationDelay: "2s" }}
+      ></div>
 
       <div className="relative max-w-4xl mx-auto px-4 py-12">
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden transform transition-all duration-300 hover:shadow-purple-200/50">
@@ -126,7 +136,9 @@ export default function Home() {
                 <h1 className="text-4xl font-bold">Chat Rooms</h1>
                 <Sparkles className="w-6 h-6 text-yellow-300 animate-pulse" />
               </div>
-              <p className="text-purple-100 text-lg">Create or join a room to start chatting with others</p>
+              <p className="text-purple-100 text-lg">
+                Create or join a room to start chatting with others
+              </p>
             </div>
           </div>
 
@@ -143,7 +155,7 @@ export default function Home() {
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
                   onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === "Enter") {
                       handleCreateRoom(e);
                     }
                   }}
@@ -185,7 +197,9 @@ export default function Home() {
                   {data.map((room, index) => (
                     <div
                       key={room.id}
-                      onClick={() => router.push(`/chat/${encodeURIComponent(room.slug)}`)}
+                      onClick={() =>
+                        router.push(`/chat/${encodeURIComponent(room.slug)}`)
+                      }
                       className="group relative flex items-center justify-between p-5 border-2 border-gray-200 rounded-xl hover:border-purple-300 cursor-pointer transition-all transform hover:scale-[1.02] hover:shadow-lg bg-white/50 backdrop-blur-sm"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
@@ -208,8 +222,18 @@ export default function Home() {
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-                          <svg className="w-4 h-4 text-purple-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          <svg
+                            className="w-4 h-4 text-purple-600 group-hover:translate-x-1 transition-transform"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 5l7 7-7 7"
+                            />
                           </svg>
                         </div>
                       </div>
@@ -224,8 +248,12 @@ export default function Home() {
                       <Plus className="w-4 h-4 text-white" />
                     </div>
                   </div>
-                  <p className="text-gray-600 font-semibold text-lg mb-2">No rooms yet</p>
-                  <p className="text-gray-400">Create your first room above to get started</p>
+                  <p className="text-gray-600 font-semibold text-lg mb-2">
+                    No rooms yet
+                  </p>
+                  <p className="text-gray-400">
+                    Create your first room above to get started
+                  </p>
                 </div>
               )}
             </div>
