@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "tsc",
+    "build": "prisma generate --schema=../../packages/db/prisma/schema.prisma && tsc",
     "start": "node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -20,6 +20,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.6.1",
     "dotenv": "^16.6.1",
+    "prisma": "^6.16.3",
     "ts-node-dev": "^2.0.0"
   },
   "dependencies": {
