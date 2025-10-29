@@ -58,7 +58,7 @@ wss.on("connection", (ws: WebSocket, request: IncomingMessage) => {
       return;
     } else {
       userinfo.isAlive = true;
-    }
+    } 
   });
 
   ws.send(JSON.stringify({
