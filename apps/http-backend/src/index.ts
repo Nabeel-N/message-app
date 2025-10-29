@@ -9,10 +9,9 @@ import { authenticateToken } from "./middleware";
 const app = express();
 app.use(express.json());
 
-// --- FIX 3: Added specific origin for CORS ---
 app.use(
   cors({
-    origin: "https://frontent-web.onrender.com", // Your frontend's URL
+    origin: "https://frontent-web.onrender.com",
   })
 );
 
@@ -124,7 +123,6 @@ app.post("/signin", async (req, res) => {
   });
 });
 
-// --- FIX 4: Removed /api prefix ---
 app.post(
   "/create-room",
   authenticateToken,
@@ -219,7 +217,6 @@ app.get(
       res.status(401).send("Userid is not found in token");
     }
 
-    // --- FIX 5: Corrected typo ---
     const auth = await Authorization(userId, slug as string);
     if (!auth) {
       return res
@@ -254,7 +251,6 @@ app.get(
 
 const PORT = process.env.PORT || 5001;
 
-// --- FIX 6: Cleaned up log message ---
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
