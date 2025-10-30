@@ -8,6 +8,7 @@ import { prisma } from "@repo/db/client";
 const port = process.env.PORT || 8080;
 const wss = new WebSocketServer({ port: Number(port) });
 console.log(`WebSocket server started on port ${port}`);
+
 interface UserInfo {
   userId: string;
   rooms: string[];

@@ -24,7 +24,6 @@ async function find_slug(slug: string, userid: string): Promise<boolean> {
   return !!findroom;
 }
 
-// --- FIX 5: Corrected typo ---
 async function Authorization(userId: string, slug: string): Promise<boolean> {
   if (!userId) {
     return false;
@@ -47,7 +46,6 @@ async function Authorization(userId: string, slug: string): Promise<boolean> {
   return !!finduserId;
 }
 
-// --- FIX 4: Removed /api prefix ---
 app.post("/signup", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -92,7 +90,6 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-// --- FIX 4: Removed /api prefix ---
 app.post("/signin", async (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
@@ -122,7 +119,29 @@ app.post("/signin", async (req, res) => {
     token: token,
   });
 });
+app.get("/me", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, email: true, photo: true } // Send back user info
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(user);
+
+  } catch (error) {
+    console.error("Error in /me route:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 app.post(
   "/create-room",
   authenticateToken,
@@ -173,7 +192,6 @@ app.post(
   }
 );
 
-// --- FIX 4: Removed /api prefix ---
 app.get("/me/rooms", authenticateToken, async (req, res) => {
   try {
     const userId = (req as any).user?.userId;
@@ -205,7 +223,7 @@ app.get("/me/rooms", authenticateToken, async (req, res) => {
   }
 });
 
-// --- FIX 4: Removed /api prefix ---
+
 app.get(
   "/rooms/:slug/messages",
   authenticateToken,

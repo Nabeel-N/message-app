@@ -24,7 +24,6 @@ export default function Home() {
           return;
         }
 
-        // --- FIX 1: Using env variable and correct route ---
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_HTTP_URL}/me/rooms`,
           {

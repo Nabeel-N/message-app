@@ -61,7 +61,6 @@ export default function ChatPage({
       const token = localStorage.getItem("token");
       if (!token) return;
       try {
-        // --- FIX 1: Using env variable and correct route ---
         const res = await fetch(`${process.env.NEXT_PUBLIC_HTTP_URL}/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -129,8 +128,6 @@ export default function ChatPage({
 
       try {
         setConnectionStatus("connecting");
-        // --- FIX 3: Using WebSocket env variable ---
-        // We assume NEXT_PUBLIC_WS_URL is set to wss://ws-backend-f903.onrender.com
         ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}?token=${token}`);
 
         ws.onopen = () => {
