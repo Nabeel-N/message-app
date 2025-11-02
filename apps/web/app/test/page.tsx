@@ -199,7 +199,7 @@ function Cardbelow({ size, color, text, rounded }: CardbelowProps) {
 
 function Footer() {
   return <div className="p-20 overflow-hidden bg-gradient-to-b mt-2 from-yellow-300 to rounded-3xl  w-full">
-    <div className="bg-red-400 p-20 rounded-full w-fit">
+    <div className="bg-red-400 p-4 rounded-full w-fit">
 
     </div>
   </div>
